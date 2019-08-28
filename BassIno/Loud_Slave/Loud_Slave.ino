@@ -51,6 +51,10 @@ void receiveEvent(int bytes)
     songCount = 0;
     trackstart = false;
     delay(100);
+    if(isPaused)
+    {
+      music.pause();
+    }
     return;
   }
   if (!trackstart && !isPaused)
