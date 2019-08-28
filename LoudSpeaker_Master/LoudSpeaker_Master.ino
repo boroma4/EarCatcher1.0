@@ -108,10 +108,8 @@ void loop()
 
   if (command1 == 6) // resetting master arduino
   {
-    delay(100);
     resetFunc();
   }
-  delay(100);
 
   voltage1 =  volts.readVolt(A4); // returns voltage
   voltage2 = volts.readVolt(A15);
