@@ -12,25 +12,31 @@
 
 #define MAX_SONGS 5
 #define VOLTAGE_LVL 0.15
+#define COOLDOWN 5
 
 byte command1 = 0;
 byte command2 = 0;
 byte command3 = 0;
 byte command4 = 0;
-
 byte trackNum = 1;
 byte mute = 0;
+
 int trackVol = 0;
 int lastVol = 4;
 int blowingCount = 0;
 int highscoreCount = 0;
+int highscore = 0;
+int cooldown1 = COOLDOWN;
+int cooldown2 = COOLDOWN;
+int cooldown3 = COOLDOWN;
+int cooldown4 = COOLDOWN;
 
 
 float voltage1 = 0;
 float voltage2 = 0;
 float voltage3 = 0;
 float voltage4 = 0;
-int highscore = 0;
+
 
 bool signalRec = false;
 bool bLcdSetup = false;
@@ -41,6 +47,10 @@ bool isMuted1 = false;
 bool isPaused = false;
 bool display_cycleOne = false;
 bool display_cycleTwo = false;
+bool wasBlown1 = false;
+bool wasBlown2 = false;
+bool wasBlown3 = false;
+bool wasBlown4 = false;
 
 
 const int RECV_PIN = 5;
@@ -66,18 +76,18 @@ void setup()
   irrecv.enableIRIn();
   irrecv.blink13(true);
 
-  EEPROM.get (0,highscore);
+  EEPROM.get (0, highscore);
   lcd2.clear();
   lcd2.setCursor(0, 0);
   lcd2.print("HIGHSCORE:");
   lcd2.setCursor(4, 1); // Установка курсора в начало второй строки
   lcd2.print(highscore);
   if (highscore != 1) {
-        lcd2.print(" points");
-      }
-      else {
-        lcd2.print(" point");
-      }
+    lcd2.print(" points");
+  }
+  else {
+    lcd2.print(" point");
+  }
   // Подключение подсветки
 }
 
@@ -291,53 +301,98 @@ void loop()
   // SEPARATE COMMANDS FOR SLAVES
 
   /*
-     FAN N1 ( pin A2)
+     FAN N1 ( pin A4)
   */
 
   if (!(powerCheck(voltage1, VOLTAGE_LVL))) // if u need to mute track n1
   {
-    command1 = 0;
-    if (!display_cycleOne)
-    {
-      bLcdSetup = false;
-      display_cycleOne = true;
+    if (wasBlown1)  // if used to turn
+    {   
+      if (cooldown1 > 0) // if cooldown time wasnt reached
+      {
+        cooldown1 -= 1;
+        command1 = 2;
+        Serial.println("Turbine 1 cooling down...");
+      }
+      else // if cooldown time was reached
+      {
+        Serial.println("Turbine 1 cooled down...");
+        wasBlown1 = false; // escape these conditions
+      }
     }
-    isMuted1 = true;
-    display_cycleTwo = false;
+    else
+    {
+      command1 = 0; // act as usually
+    }
+    
   }
   if (powerCheck(voltage1, VOLTAGE_LVL) ) // if u need to unmute track 1
   {
+
+    wasBlown1 = true;// was moved
+    cooldown1 = COOLDOWN;
     command1 = 2;
-    isMuted1 = false;
-    display_cycleOne = false;
-    if (!display_cycleTwo)
-    {
-      bLcdSetup = false;
-      display_cycleTwo = true;
-    }
   }
 
   /*
-      FAN N2 ( pin A5)
+      FAN N2 ( pin A15)
   */
   if (!(powerCheck(voltage2, VOLTAGE_LVL))) // if u need to mute track n1
   {
-    command2 = 0;
+    if (wasBlown2)  // if used to turn
+    {    
+      if (cooldown2 > 0) // if cooldown time wasnt reached
+      {
+        cooldown2 -= 1;
+        command2 = 2;
+        Serial.println("Turbine 2 cooling down...");
+      }
+      else // if cooldown time was reached
+      {
+        Serial.println("Turbine 2 cooled down...");
+        wasBlown2 = false; // escape these conditions
+      }
+    }
+    else
+    {
+      command2 = 0; // act as usually
+    }
   }
   if (powerCheck(voltage2, VOLTAGE_LVL) ) // if u need to unmute track 1
   {
+    wasBlown2 = true;
+    cooldown2 = COOLDOWN;
     command2 = 2;
   }
 
   /*
-      FAN N3 ( pin A7)
+      FAN N3 ( pin A6)
   */
   if (!(powerCheck(voltage3, VOLTAGE_LVL))) // if u need to mute track n1
   {
-    command3 = 0;
+    if (wasBlown3)  // if used to turn
+    {    
+      if (cooldown3 > 0) // if cooldown time wasnt reached
+      {
+        cooldown3 -= 1;
+        command3 = 2;
+        Serial.println("Turbine 3 cooling down...");
+      }
+      else // if cooldown time was reached
+      {
+        Serial.println("Turbine 3 cooled down...");
+        wasBlown3 = false; // escape these conditions
+      }
+    }
+    else
+    {
+      command3 = 0; // act as usually
+    }
   }
   if (powerCheck(voltage3, VOLTAGE_LVL) ) // if u need to unmute track 1
   {
+    wasBlown3 = true;
+    cooldown3 = COOLDOWN;
     command3 = 2;
   }
   /*
@@ -345,10 +400,29 @@ void loop()
   */
   if (!(powerCheck(voltage4, VOLTAGE_LVL))) // if u need to mute track n1
   {
-    command4 = 0;
+    if (wasBlown4)  // if used to turn
+    {    
+      if (cooldown4 > 0) // if cooldown time wasnt reached
+      {
+        cooldown4 -= 1;
+        command4 = 2;
+        Serial.println("Turbine 4 cooling down...");
+      }
+      else // if cooldown time was reached
+      {
+        Serial.println("Turbine 4 cooled down...");
+        wasBlown4 = false; // escape these conditions
+      }
+    }
+    else
+    {
+      command4 = 0; // act as usually
+    }
   }
   if (powerCheck(voltage4, VOLTAGE_LVL) ) // if u need to unmute track 1
   {
+    wasBlown4 = true;
+    cooldown4 = COOLDOWN;
     command4 = 2;
   }
 
