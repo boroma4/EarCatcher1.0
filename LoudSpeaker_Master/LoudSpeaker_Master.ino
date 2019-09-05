@@ -14,13 +14,10 @@
 #define VOLTAGE_LVL 0.15
 #define COOLDOWN 5
 
-byte command1 = 0;
-byte command2 = 0;
-byte command3 = 0;
-byte command4 = 0;
+byte command[] = {0, 0, 0, 0};
 byte trackNum = 1;
-byte mute = 0;
 
+int address = 0;
 int trackVol = 0;
 int workingTurbines = -1;
 int lastVol = 4;
@@ -28,33 +25,17 @@ int blowingCount = 0;
 int highscoreCount = 0;
 int lastScore = 0;
 int highscore = 0;
-int cooldown1 = COOLDOWN;
-int cooldown2 = COOLDOWN;
-int cooldown3 = COOLDOWN;
-int cooldown4 = COOLDOWN;
+int cooldown[] = {COOLDOWN, COOLDOWN, COOLDOWN, COOLDOWN};
 
-
-float voltage1 = 0;
-float voltage2 = 0;
-float voltage3 = 0;
-float voltage4 = 0;
-
+float voltage[] = {0, 0, 0, 0};
+bool wasBlown[] = {false, false, false, false};
 
 bool signalRec = false;
 bool bLcdSetup = false;
 bool cheatMode = false;
-bool begincom = false;
 bool wasSwitched = false;
-bool isMuted1 = false;
 bool isPaused = false;
-bool display_cycleOne = false;
-bool display_cycleTwo = false;
-bool wasBlown1 = false;
-bool wasBlown2 = false;
-bool wasBlown3 = false;
-bool wasBlown4 = false;
 bool updateLast = false;
-bool haveUpdates = false;
 
 
 const int RECV_PIN = 5;
@@ -71,20 +52,22 @@ void setup()
   //  Start the I2C Bus as Master
   Wire.begin();
   Serial.begin(9600); //Serial Com for debugging
-  lcd.init();                      // Инициализация дисплея
+  lcd.init();                      // display initialisation
   lcd.setBacklight(255);
   lcd.begin(16, 2);
-  lcd2.init();                      // Инициализация дисплея
+  lcd2.init();
   lcd2.setBacklight(255);
   lcd2.begin(16, 2);
   irrecv.enableIRIn();
   irrecv.blink13(true);
 
-    highscore = EEPROM.read (0);
-  highscoreCount = EEPROM.read(2);
+  EEPROM.get(address, highscore);
+  address += sizeof(int);
+  EEPROM.get(address, highscoreCount);
+  address = 0;
   lcd2.clear();
   lcd2.setCursor(0, 0);
-  lcd2.print("HIGH:");             // Установка курсора в начало второй строки
+  lcd2.print("HIGH:");
   lcd2.print(highscore);
   if (highscore != 1) {
     lcd2.print(" points");
@@ -93,7 +76,7 @@ void setup()
     lcd2.print(" point");
   }
   lcd2.setCursor(0, 1);
-  lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+  lcd2.print("LAST: ");
   lcd2.print(lastScore);
   if (highscore != 1) {
     lcd2.print(" points");
@@ -101,27 +84,26 @@ void setup()
   else {
     lcd2.print(" point");
   }
-  // Подключение подсветки
 }
 
 void(* resetFunc) (void) = 0;
 
 void loop()
 {
-  Wire.beginTransmission(1); // transmit to device #9
-  Wire.write(command1);
+  Wire.beginTransmission(1); // transmit to device #1
+  Wire.write(command[0]);
   Wire.endTransmission(false);
 
-  Wire.beginTransmission(2); // transmit to device #9
-  Wire.write(command2);
+  Wire.beginTransmission(2); // transmit to device #2
+  Wire.write(command[1]);
   Wire.endTransmission(false);
 
-  Wire.beginTransmission(3); // transmit to device #9
-  Wire.write(command3);
+  Wire.beginTransmission(3); // transmit to device #3
+  Wire.write(command[2]);
   Wire.endTransmission(false);
 
-  Wire.beginTransmission(4); // transmit to device #9
-  Wire.write(command4);
+  Wire.beginTransmission(4); // transmit to device #4
+  Wire.write(command[3]);
   Wire.endTransmission();
   /*
      SEND COMMAND TO OTHER ARDUINOS HERE
@@ -129,15 +111,15 @@ void loop()
   */
   delay(100);
 
-  if (command1 == 6) // resetting master arduino
+  if (command[0] == 6) // resetting master arduino
   {
     resetFunc();
   }
 
-  voltage1 =  volts.readVolt(A4); // returns voltage
-  voltage2 = volts.readVolt(A15);
-  voltage3 =  volts.readVolt(A6); // returns voltage
-  voltage4 = volts.readVolt(A9);
+  voltage[0] =  volts.readVolt(A4); // returns voltage
+  voltage[1] = volts.readVolt(A15);
+  voltage[2] =  volts.readVolt(A6); // returns voltage
+  voltage[3] = volts.readVolt(A9);
 
   if (!bLcdSetup) // Update display info
   {
@@ -145,22 +127,22 @@ void loop()
   }
   if (cheatMode) // Cheats
   {
-    voltage1 = 999;
-    voltage2 = 999;
-    voltage3 = 999;
-    voltage4 = 999;
+    for (int i = 0; i < 3; i++)
+    {
+      voltage[i] = 999;
+    }
   }
 
   /*
      HIGHSCORE CHECK
   */
   workingTurbines = -1; // adding them in powerCheck
-  if (!isPaused and !cheatMode and (powerCheck(voltage1, VOLTAGE_LVL) or powerCheck(voltage2, VOLTAGE_LVL) or powerCheck(voltage3, VOLTAGE_LVL) or powerCheck(voltage4, VOLTAGE_LVL) ))
+  if (!isPaused and !cheatMode and (powerCheck(voltage[0], VOLTAGE_LVL) or powerCheck(voltage[1], VOLTAGE_LVL) or powerCheck(voltage[2], VOLTAGE_LVL) or powerCheck(voltage[3], VOLTAGE_LVL) ))
   {
-    powerCheck(voltage1, VOLTAGE_LVL); // just to check how many is working
-    powerCheck(voltage2, VOLTAGE_LVL);
-    powerCheck(voltage3, VOLTAGE_LVL);
-    powerCheck(voltage4, VOLTAGE_LVL);
+    powerCheck(voltage[0], VOLTAGE_LVL); // just to check how many is working
+    powerCheck(voltage[1], VOLTAGE_LVL);
+    powerCheck(voltage[2], VOLTAGE_LVL);
+    powerCheck(voltage[3], VOLTAGE_LVL);
 
     switch (workingTurbines)
     {
@@ -192,7 +174,6 @@ void loop()
         updateLast = false;
       }
       lastScore = blowingCount / 2;
-      haveUpdates = true;
     }
     if (blowingCount > highscoreCount)
     {
@@ -200,9 +181,10 @@ void loop()
       if (highscoreCount > 2)
       {
         highscore = highscoreCount / 2;
-        EEPROM.update (0, highscore);
-        EEPROM.update(2, highscoreCount);
-        haveUpdates = true;
+        EEPROM.put(address, highscore);
+        address += sizeof(int);
+        EEPROM.put(address, highscoreCount);
+        address = 0;
       }
     }
     lcd2.setCursor(0, 0);
@@ -219,31 +201,27 @@ void loop()
       case 1:
         lcd.setCursor(12, 1);
         lcd.print(" x1");
-        haveUpdates = true;
         break;
 
       case 2:
         lcd.setCursor(12, 1);
         lcd.print(" x2");
-        haveUpdates = true;
         break;
 
       case 3:
         lcd.setCursor(12, 1);
         lcd.print(" x3");
-        haveUpdates = true;
         break;
 
       case 4:
         lcd.setCursor(12, 1);
         lcd.print(" x4");
-        haveUpdates = true;
         break;
 
       default: break;
     }
     lcd2.setCursor(0, 1);
-    lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+    lcd2.print("LAST: ");
     lcd2.print(lastScore);
     if (lastScore != 1) {
       lcd2.print(" points");
@@ -259,7 +237,7 @@ void loop()
     blowingCount = 0;
     updateLast = true;
     lcd2.setCursor(0, 0);
-    lcd2.print("HIGH:");             // Установка курсора в начало второй строки
+    lcd2.print("HIGH:");
     lcd2.print(highscore);
     if (highscore != 1) {
       lcd2.print(" points");
@@ -267,10 +245,10 @@ void loop()
     else {
       lcd2.print(" point");
     }
-     lcd.setCursor(12, 1);
+    lcd.setCursor(12, 1);
     lcd.print(" x0");
     lcd2.setCursor(0, 1);
-    lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+    lcd2.print("LAST: ");
     lcd2.print(lastScore);
     if (lastScore != 1) {
       lcd2.print(" points");
@@ -290,10 +268,10 @@ void loop()
       case 0xFF02FD:
 
         Serial.println ("next track");
-        command1 = 4;
-        command2 = 4;
-        command3 = 4;
-        command4 = 4;
+        for (int i = 0; i < 3; i++)
+        {
+          command[i] = 4;
+        }
         bLcdSetup = false;
         songUp();
         irrecv.resume();
@@ -302,10 +280,10 @@ void loop()
       case 0xFF22DD:
 
         Serial.println ("previous track");
-        command1 = 5;
-        command2 = 5;
-        command3 = 5;
-        command4 = 5;
+        for (int i = 0; i < 3; i++)
+        {
+          command[i] = 5;
+        }
         bLcdSetup = false;
         songDown();
         irrecv.resume();
@@ -314,17 +292,20 @@ void loop()
       // reset highscore
       case 0xFF5AA5 :
 
-        EEPROM.update(0, 0);
         highscore = 0;
         highscoreCount = 0;
-        EEPROM.update(2, highscoreCount);
+        EEPROM.put(address, highscore);
+        address += sizeof(int);
+        EEPROM.put(address, highscoreCount);
+        address = 0;
+        
         lcd2.clear();
         lcd2.setCursor(0, 0);
-        lcd2.print("HIGH:");             // Установка курсора в начало второй строки
+        lcd2.print("HIGH:");
         lcd2.print(highscore);
         lcd2.print(" points");
         lcd2.setCursor(0, 1);
-        lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+        lcd2.print("LAST: ");
         lcd2.print(lastScore);
         if (lastScore != 1) {
           lcd2.print(" points");
@@ -352,10 +333,10 @@ void loop()
       case 0xFFA857:
 
         Serial.println ("Volume up!");
-        command1 = 7;
-        command2 = 7;
-        command3 = 7;
-        command4 = 7;
+        for (int i = 0; i < 3; i++)
+        {
+          command[i] = 7;
+        }
 
         if (lastVol < 5)
         {
@@ -368,10 +349,10 @@ void loop()
       case 0xFFE01F :
 
         Serial.println ("Volume down!");
-        command1 = 8;
-        command2 = 8;
-        command3 = 8;
-        command4 = 8;
+        for (int i = 0; i < 3; i++)
+        {
+          command[i] = 8;
+        }
         if (lastVol > 1)
         {
           lastVol--;
@@ -383,10 +364,10 @@ void loop()
 
       // PAUSE
       case 0xFFC23D :
-        command1 = 9;
-        command2 = 9;
-        command3 = 9;
-        command4 = 9;
+        for (int i = 0; i < 3; i++)
+        {
+          command[i] = 9;
+        }
         bLcdSetup = false;
 
         if (!isPaused)
@@ -404,10 +385,10 @@ void loop()
 
       case 0xFF52AD : // reset function
 
-        command1 = 6;
-        command2 = 6;
-        command3 = 6;
-        command4 = 6;
+        for (int i = 0; i < 3; i++)
+        {
+          command[i] = 6;
+        }
         irrecv.resume();
         return;
 
@@ -423,126 +404,126 @@ void loop()
      FAN N1 ( pin A4)
   */
 
-  if (!(powerCheck(voltage1, VOLTAGE_LVL))) // if u need to mute track n1
+  if (!(powerCheck(voltage[0], VOLTAGE_LVL))) // if u need to mute track n1
   {
-    if (wasBlown1)  // if used to turn
-    {   
-      if (cooldown1 > 0) // if cooldown time wasnt reached
+    if (wasBlown[0])  // if used to turn
+    {
+      if (cooldown[0] > 0) // if cooldown time wasnt reached
       {
-        cooldown1 -= 1;
-        command1 = 2;
+        cooldown[0] -= 1;
+        command[0] = 2;
         Serial.println("Turbine 1 cooling down...");
       }
       else // if cooldown time was reached
       {
         Serial.println("Turbine 1 cooled down...");
-        wasBlown1 = false; // escape these conditions
+        wasBlown[0] = false; // escape these conditions
       }
     }
     else
     {
-      command1 = 0; // act as usually
+      command[0] = 0; // act as usually
     }
-    
+
   }
-  if (powerCheck(voltage1, VOLTAGE_LVL) ) // if u need to unmute track 1
+  if (powerCheck(voltage[0], VOLTAGE_LVL) ) // if u need to unmute track 1
   {
 
-    wasBlown1 = true;// was moved
-    cooldown1 = COOLDOWN;
-    command1 = 2;
+    wasBlown[0] = true;// was moved
+    cooldown[0] = COOLDOWN;
+    command[0] = 2;
   }
 
   /*
       FAN N2 ( pin A15)
   */
-  if (!(powerCheck(voltage2, VOLTAGE_LVL))) // if u need to mute track n1
+  if (!(powerCheck(voltage[1], VOLTAGE_LVL))) // if u need to mute track n1
   {
-    if (wasBlown2)  // if used to turn
-    {    
-      if (cooldown2 > 0) // if cooldown time wasnt reached
+    if (wasBlown[1])  // if used to turn
+    {
+      if (cooldown[1] > 0) // if cooldown time wasnt reached
       {
-        cooldown2 -= 1;
-        command2 = 2;
+        cooldown[1] -= 1;
+        command[1] = 2;
         Serial.println("Turbine 2 cooling down...");
       }
       else // if cooldown time was reached
       {
         Serial.println("Turbine 2 cooled down...");
-        wasBlown2 = false; // escape these conditions
+        wasBlown[1] = false; // escape these conditions
       }
     }
     else
     {
-      command2 = 0; // act as usually
+      command[1] = 0; // act as usually
     }
   }
-  if (powerCheck(voltage2, VOLTAGE_LVL) ) // if u need to unmute track 1
+  if (powerCheck(voltage[1], VOLTAGE_LVL) ) // if u need to unmute track 1
   {
-    wasBlown2 = true;
-    cooldown2 = COOLDOWN;
-    command2 = 2;
+    wasBlown[1] = true;
+    cooldown[1] = COOLDOWN;
+    command[1] = 2;
   }
 
   /*
       FAN N3 ( pin A6)
   */
-  if (!(powerCheck(voltage3, VOLTAGE_LVL))) // if u need to mute track n1
+  if (!(powerCheck(voltage[2], VOLTAGE_LVL))) // if u need to mute track n1
   {
-    if (wasBlown3)  // if used to turn
-    {    
-      if (cooldown3 > 0) // if cooldown time wasnt reached
+    if (wasBlown[2])  // if used to turn
+    {
+      if (cooldown[2] > 0) // if cooldown time wasnt reached
       {
-        cooldown3 -= 1;
-        command3 = 2;
+        cooldown[2] -= 1;
+        command[2] = 2;
         Serial.println("Turbine 3 cooling down...");
       }
       else // if cooldown time was reached
       {
         Serial.println("Turbine 3 cooled down...");
-        wasBlown3 = false; // escape these conditions
+        wasBlown[2] = false; // escape these conditions
       }
     }
     else
     {
-      command3 = 0; // act as usually
+      command[2] = 0; // act as usually
     }
   }
-  if (powerCheck(voltage3, VOLTAGE_LVL) ) // if u need to unmute track 1
+  if (powerCheck(voltage[2], VOLTAGE_LVL) ) // if u need to unmute track 1
   {
-    wasBlown3 = true;
-    cooldown3 = COOLDOWN;
-    command3 = 2;
+    wasBlown[2] = true;
+    cooldown[2] = COOLDOWN;
+    command[2] = 2;
   }
   /*
         FAN N4 ( pin A9)
   */
-  if (!(powerCheck(voltage4, VOLTAGE_LVL))) // if u need to mute track n1
+  if (!(powerCheck(voltage[3], VOLTAGE_LVL))) // if u need to mute track n1
   {
-    if (wasBlown4)  // if used to turn
-    {    
-      if (cooldown4 > 0) // if cooldown time wasnt reached
+    if (wasBlown[3])  // if used to turn
+    {
+      if (cooldown[3] > 0) // if cooldown time wasnt reached
       {
-        cooldown4 -= 1;
-        command4 = 2;
+        cooldown[3] -= 1;
+        command[3] = 2;
         Serial.println("Turbine 4 cooling down...");
       }
       else // if cooldown time was reached
       {
         Serial.println("Turbine 4 cooled down...");
-        wasBlown4 = false; // escape these conditions
+        wasBlown[3] = false; // escape these conditions
       }
     }
     else
     {
-      command4 = 0; // act as usually
+      command[3] = 0; // act as usually
     }
   }
-  if (powerCheck(voltage4, VOLTAGE_LVL) ) // if u need to unmute track 1
+  if (powerCheck(voltage[3], VOLTAGE_LVL) ) // if u need to unmute track 1
   {
-    wasBlown4 = true;
-    cooldown4 = COOLDOWN;
-    command4 = 2;
+    wasBlown[3] = true;
+    cooldown[3] = COOLDOWN;
+    command[3] = 2;
   }
 
 }
