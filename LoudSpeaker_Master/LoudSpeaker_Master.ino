@@ -22,9 +22,11 @@ byte trackNum = 1;
 byte mute = 0;
 
 int trackVol = 0;
+int workingTurbines = -1;
 int lastVol = 4;
 int blowingCount = 0;
 int highscoreCount = 0;
+int lastScore = 0;
 int highscore = 0;
 int cooldown1 = COOLDOWN;
 int cooldown2 = COOLDOWN;
@@ -51,6 +53,8 @@ bool wasBlown1 = false;
 bool wasBlown2 = false;
 bool wasBlown3 = false;
 bool wasBlown4 = false;
+bool updateLast = false;
+bool haveUpdates = false;
 
 
 const int RECV_PIN = 5;
@@ -76,12 +80,21 @@ void setup()
   irrecv.enableIRIn();
   irrecv.blink13(true);
 
-  EEPROM.get (0, highscore);
+    highscore = EEPROM.read (0);
+  highscoreCount = EEPROM.read(2);
   lcd2.clear();
   lcd2.setCursor(0, 0);
-  lcd2.print("HIGHSCORE:");
-  lcd2.setCursor(4, 1); // Установка курсора в начало второй строки
+  lcd2.print("HIGH:");             // Установка курсора в начало второй строки
   lcd2.print(highscore);
+  if (highscore != 1) {
+    lcd2.print(" points");
+  }
+  else {
+    lcd2.print(" point");
+  }
+  lcd2.setCursor(0, 1);
+  lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+  lcd2.print(lastScore);
   if (highscore != 1) {
     lcd2.print(" points");
   }
@@ -141,34 +154,131 @@ void loop()
   /*
      HIGHSCORE CHECK
   */
-
+  workingTurbines = -1; // adding them in powerCheck
   if (!isPaused and !cheatMode and (powerCheck(voltage1, VOLTAGE_LVL) or powerCheck(voltage2, VOLTAGE_LVL) or powerCheck(voltage3, VOLTAGE_LVL) or powerCheck(voltage4, VOLTAGE_LVL) ))
   {
-    blowingCount++;
-  }
-  else
-  {
+    powerCheck(voltage1, VOLTAGE_LVL); // just to check how many is working
+    powerCheck(voltage2, VOLTAGE_LVL);
+    powerCheck(voltage3, VOLTAGE_LVL);
+    powerCheck(voltage4, VOLTAGE_LVL);
+
+    switch (workingTurbines)
+    {
+      case 1:
+        blowingCount++;
+        break;
+
+      case 2:
+        blowingCount += 2;
+        break;
+
+      case 3:
+        blowingCount += 3;
+        break;
+
+      case 4:
+        blowingCount += 4;
+        break;
+
+      default: break;
+    }
+
+    // constant update of Last score
+    if (blowingCount > 2)
+    {
+      if (updateLast)
+      {
+        lastScore = 0;
+        updateLast = false;
+      }
+      lastScore = blowingCount / 2;
+      haveUpdates = true;
+    }
     if (blowingCount > highscoreCount)
     {
       highscoreCount = blowingCount;
-      if (highscoreCount > 2) {
+      if (highscoreCount > 2)
+      {
         highscore = highscoreCount / 2;
+        EEPROM.update (0, highscore);
+        EEPROM.update(2, highscoreCount);
+        haveUpdates = true;
       }
-      lcd2.clear();
-      lcd2.setCursor(0, 0);
-      lcd2.print("HIGHSCORE:");             // Установка курсора в начало второй строки
-
-      lcd2.setCursor(4, 1);
-      lcd2.print(highscore);
-      if (highscore != 1) {
-        lcd2.print(" points");
-      }
-      else {
-        lcd2.print(" point");
-      }
-      EEPROM.put (0, highscore);
     }
+    lcd2.setCursor(0, 0);
+    lcd2.print("HIGH:");             // Установка курсора в начало второй строки
+    lcd2.print(highscore);
+    if (highscore != 1) {
+      lcd2.print(" points");
+    }
+    else {
+      lcd2.print(" point");
+    }
+    switch (workingTurbines)
+    {
+      case 1:
+        lcd.setCursor(12, 1);
+        lcd.print(" x1");
+        haveUpdates = true;
+        break;
+
+      case 2:
+        lcd.setCursor(12, 1);
+        lcd.print(" x2");
+        haveUpdates = true;
+        break;
+
+      case 3:
+        lcd.setCursor(12, 1);
+        lcd.print(" x3");
+        haveUpdates = true;
+        break;
+
+      case 4:
+        lcd.setCursor(12, 1);
+        lcd.print(" x4");
+        haveUpdates = true;
+        break;
+
+      default: break;
+    }
+    lcd2.setCursor(0, 1);
+    lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+    lcd2.print(lastScore);
+    if (lastScore != 1) {
+      lcd2.print(" points");
+    }
+    else
+    {
+      lcd2.print(" point");
+    }
+  }
+
+  else
+  {
     blowingCount = 0;
+    updateLast = true;
+    lcd2.setCursor(0, 0);
+    lcd2.print("HIGH:");             // Установка курсора в начало второй строки
+    lcd2.print(highscore);
+    if (highscore != 1) {
+      lcd2.print(" points");
+    }
+    else {
+      lcd2.print(" point");
+    }
+     lcd.setCursor(12, 1);
+    lcd.print(" x0");
+    lcd2.setCursor(0, 1);
+    lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+    lcd2.print(lastScore);
+    if (lastScore != 1) {
+      lcd2.print(" points");
+    }
+    else
+    {
+      lcd2.print(" point");
+    }
   }
 
   // COMMON COMMANDS FOR ALL SLAVES
@@ -204,15 +314,24 @@ void loop()
       // reset highscore
       case 0xFF5AA5 :
 
-        EEPROM.put(0, 0);
+        EEPROM.update(0, 0);
         highscore = 0;
         highscoreCount = 0;
+        EEPROM.update(2, highscoreCount);
         lcd2.clear();
         lcd2.setCursor(0, 0);
-        lcd2.print("HIGHSCORE:");             // Установка курсора в начало второй строки
-        lcd2.setCursor(4, 1);
+        lcd2.print("HIGH:");             // Установка курсора в начало второй строки
         lcd2.print(highscore);
         lcd2.print(" points");
+        lcd2.setCursor(0, 1);
+        lcd2.print("LAST: ");             // Установка курсора в начало второй строки
+        lcd2.print(lastScore);
+        if (lastScore != 1) {
+          lcd2.print(" points");
+        }
+        else {
+          lcd2.print(" point");
+        }
         irrecv.resume();
         return;
 
@@ -438,6 +557,7 @@ bool powerCheck (float vol, float level) // comparing read voltage to barrier on
   else
   {
     signalRec = true;
+    workingTurbines ++;
   }
   return signalRec;
 }
