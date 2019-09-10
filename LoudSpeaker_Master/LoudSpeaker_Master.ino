@@ -136,14 +136,10 @@ void loop()
   /*
      HIGHSCORE CHECK
   */
-  workingTurbines = -1; // adding them in powerCheck
+   // adding them in powerCheck
   if (!isPaused and !cheatMode and (powerCheck(voltage[0], VOLTAGE_LVL) or powerCheck(voltage[1], VOLTAGE_LVL) or powerCheck(voltage[2], VOLTAGE_LVL) or powerCheck(voltage[3], VOLTAGE_LVL) ))
   {
-    powerCheck(voltage[0], VOLTAGE_LVL); // just to check how many is working
-    powerCheck(voltage[1], VOLTAGE_LVL);
-    powerCheck(voltage[2], VOLTAGE_LVL);
-    powerCheck(voltage[3], VOLTAGE_LVL);
-
+   workingTurbines = wTurbines();
     switch (workingTurbines)
     {
       case 1:
@@ -538,9 +534,22 @@ bool powerCheck (float vol, float level) // comparing read voltage to barrier on
   else
   {
     signalRec = true;
-    workingTurbines ++;
+   
   }
   return signalRec;
+}
+
+int wTurbines ()
+{
+  int turbines = 0;
+  for (int i; i < 4; i++)
+  {
+    if(powerCheck(voltage[i], VOLTAGE_LVL));
+    {
+      turbines++;
+    }
+  }
+  return turbines;
 }
 
 void songDown()
