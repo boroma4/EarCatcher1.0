@@ -542,7 +542,7 @@ bool powerCheck (float vol, float level) // comparing read voltage to barrier on
 int wTurbines ()
 {
   int turbines = 0;
-  for (int i; i < 4; i++)
+  for (int i; i < 3; i++)
   {
     if(powerCheck(voltage[i], VOLTAGE_LVL));
     {
