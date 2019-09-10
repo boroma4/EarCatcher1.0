@@ -13,6 +13,8 @@
 #define MAX_SONGS 5
 #define VOLTAGE_LVL 0.15
 #define COOLDOWN 5
+#define SCORE_DIVIDER 2
+#define SCORE_LIMIT 201
 
 byte command[] = {0, 0, 0, 0};
 byte trackNum = 1;
@@ -136,10 +138,10 @@ void loop()
   /*
      HIGHSCORE CHECK
   */
-   // adding them in powerCheck
+  // adding them in powerCheck
   if (!isPaused and !cheatMode and (powerCheck(voltage[0], VOLTAGE_LVL) or powerCheck(voltage[1], VOLTAGE_LVL) or powerCheck(voltage[2], VOLTAGE_LVL) or powerCheck(voltage[3], VOLTAGE_LVL) ))
   {
-   workingTurbines = wTurbines();
+    workingTurbines = wTurbines();
     switch (workingTurbines)
     {
       case 1:
@@ -162,25 +164,33 @@ void loop()
     }
 
     // constant update of Last score
-    if (blowingCount > 2)
+    if (blowingCount >= SCORE_DIVIDER && blowingCount < SCORE_LIMIT)
     {
       if (updateLast)
       {
         lastScore = 0;
         updateLast = false;
       }
-      lastScore = blowingCount / 2;
+      lastScore = blowingCount / SCORE_DIVIDER;
     }
-    if (blowingCount > highscoreCount)
+    if (blowingCount < SCORE_DIVIDER)
+    {
+      lastScore = 0;
+    }
+    if (blowingCount > highscoreCount && blowingCount < SCORE_LIMIT)
     {
       highscoreCount = blowingCount;
-      if (highscoreCount > 2)
+      if (highscoreCount >= SCORE_DIVIDER)
       {
-        highscore = highscoreCount / 2;
+        highscore = highscoreCount / SCORE_DIVIDER;
         EEPROM.put(address, highscore);
         address += sizeof(int);
         EEPROM.put(address, highscoreCount);
         address = 0;
+      }
+      else
+      {
+         highscore = 0;
       }
     }
     lcd2.setCursor(0, 0);
@@ -294,7 +304,7 @@ void loop()
         address += sizeof(int);
         EEPROM.put(address, highscoreCount);
         address = 0;
-        
+
         lcd2.clear();
         lcd2.setCursor(0, 0);
         lcd2.print("HIGH:");
@@ -534,7 +544,7 @@ bool powerCheck (float vol, float level) // comparing read voltage to barrier on
   else
   {
     signalRec = true;
-   
+
   }
   return signalRec;
 }
@@ -544,7 +554,7 @@ int wTurbines ()
   int turbines = 0;
   for (int i; i < 3; i++)
   {
-    if(powerCheck(voltage[i], VOLTAGE_LVL));
+    if (powerCheck(voltage[i], VOLTAGE_LVL));
     {
       turbines++;
     }
