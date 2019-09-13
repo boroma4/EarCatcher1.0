@@ -1,3 +1,5 @@
+#include <Adafruit_NeoPixel.h>
+
 #include <EEPROM.h>
 
 #include <boarddefs.h>
@@ -12,10 +14,15 @@
 
 #define MAX_SONGS 5
 #define VOLTAGE_LVL 0.15
-#define COOLDOWN 5
+#define COOLDOWN 6
+#define PIN 6
+#define LEDNUM 6
+
+Adafruit_NeoPixel strip1 = Adafruit_NeoPixel(LEDNUM, PIN, NEO_GRB + NEO_KHZ800);
 
 byte command[] = {0, 0, 0, 0};
 byte trackNum = 1;
+byte pixel = 0;
 
 int address = 0;
 int trackVol = 0;
@@ -50,6 +57,8 @@ ReadValues volts ; // object of ReadValues class EarCatcher lib
 void setup()
 {
   //  Start the I2C Bus as Master
+  strip1.begin();
+  strip1.show(); // Initialize all pixels to 'off'
   Wire.begin();
   Serial.begin(9600); //Serial Com for debugging
   lcd.init();                      // display initialisation
@@ -136,26 +145,34 @@ void loop()
   /*
      HIGHSCORE CHECK
   */
-   // adding them in powerCheck
+  // adding them in powerCheck
   if (!isPaused and !cheatMode and (powerCheck(voltage[0], VOLTAGE_LVL) or powerCheck(voltage[1], VOLTAGE_LVL) or powerCheck(voltage[2], VOLTAGE_LVL) or powerCheck(voltage[3], VOLTAGE_LVL) ))
   {
-   workingTurbines = wTurbines();
+    workingTurbines = wTurbines();
     switch (workingTurbines)
     {
       case 1:
         blowingCount++;
+        strip1.setBrightness(2);
+        strip1.show();
         break;
 
       case 2:
         blowingCount += 2;
+        strip1.setBrightness(4);
+        strip1.show();
         break;
 
       case 3:
         blowingCount += 3;
+        strip1.setBrightness(6);
+        strip1.show();
         break;
 
       case 4:
         blowingCount += 4;
+        strip1.setBrightness(7);
+        strip1.show();
         break;
 
       default: break;
@@ -230,6 +247,9 @@ void loop()
 
   else
   {
+    strip1.setBrightness(0);
+    strip1.show();
+
     blowingCount = 0;
     updateLast = true;
     lcd2.setCursor(0, 0);
@@ -294,7 +314,7 @@ void loop()
         address += sizeof(int);
         EEPROM.put(address, highscoreCount);
         address = 0;
-        
+
         lcd2.clear();
         lcd2.setCursor(0, 0);
         lcd2.print("HIGH:");
@@ -399,6 +419,8 @@ void loop()
   /*
      FAN N1 ( pin A4)
   */
+    uint32_t yellow = strip1.Color(255, 255, 0);
+  uint32_t blank = strip1.Color(226, 226, 226);
 
   if (!(powerCheck(voltage[0], VOLTAGE_LVL))) // if u need to mute track n1
   {
@@ -409,6 +431,12 @@ void loop()
         cooldown[0] -= 1;
         command[0] = 2;
         Serial.println("Turbine 1 cooling down...");
+        if (pixel > 0)
+        {
+          strip1.setPixelColor(pixel, blank);
+          strip1.show();
+          pixel --;
+        }
       }
       else // if cooldown time was reached
       {
@@ -428,6 +456,12 @@ void loop()
     wasBlown[0] = true;// was moved
     cooldown[0] = COOLDOWN;
     command[0] = 2;
+    if (pixel < strip1.numPixels())
+    {
+      strip1.setPixelColor(pixel, yellow);
+      strip1.show();
+      pixel ++;
+    }
   }
 
   /*
@@ -534,7 +568,7 @@ bool powerCheck (float vol, float level) // comparing read voltage to barrier on
   else
   {
     signalRec = true;
-   
+
   }
   return signalRec;
 }
@@ -544,7 +578,7 @@ int wTurbines ()
   int turbines = 0;
   for (int i; i < 3; i++)
   {
-    if(powerCheck(voltage[i], VOLTAGE_LVL));
+    if (powerCheck(voltage[i], VOLTAGE_LVL));
     {
       turbines++;
     }
