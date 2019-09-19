@@ -14,11 +14,13 @@
 
 #define MAX_SONGS 5
 #define VOLTAGE_LVL 0.15
-#define COOLDOWN 6
 #define PIN 6
 #define LEDNUM 6
-
 Adafruit_NeoPixel strip1 = Adafruit_NeoPixel(LEDNUM, PIN, NEO_GRB + NEO_KHZ800);
+
+#define COOLDOWN 5
+#define SCORE_DIVIDER 2
+#define SCORE_LIMIT 201
 
 byte command[] = {0, 0, 0, 0};
 byte trackNum = 1;
@@ -179,25 +181,33 @@ void loop()
     }
 
     // constant update of Last score
-    if (blowingCount > 2)
+    if (blowingCount >= SCORE_DIVIDER && blowingCount < SCORE_LIMIT)
     {
       if (updateLast)
       {
         lastScore = 0;
         updateLast = false;
       }
-      lastScore = blowingCount / 2;
+      lastScore = blowingCount / SCORE_DIVIDER;
     }
-    if (blowingCount > highscoreCount)
+    if (blowingCount < SCORE_DIVIDER)
+    {
+      lastScore = 0;
+    }
+    if (blowingCount > highscoreCount && blowingCount < SCORE_LIMIT)
     {
       highscoreCount = blowingCount;
-      if (highscoreCount > 2)
+      if (highscoreCount >= SCORE_DIVIDER)
       {
-        highscore = highscoreCount / 2;
+        highscore = highscoreCount / SCORE_DIVIDER;
         EEPROM.put(address, highscore);
         address += sizeof(int);
         EEPROM.put(address, highscoreCount);
         address = 0;
+      }
+      else
+      {
+         highscore = 0;
       }
     }
     lcd2.setCursor(0, 0);
