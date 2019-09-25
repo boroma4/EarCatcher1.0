@@ -61,6 +61,7 @@ void setup()
   //  Start the I2C Bus as Master
   strip1.begin();
   strip1.show(); // Initialize all pixels to 'off'
+  strip1.setBrightness(6);
   Wire.begin();
   Serial.begin(9600); //Serial Com for debugging
   lcd.init();                      // display initialisation
@@ -128,9 +129,9 @@ void loop()
   }
 
   voltage[0] =  volts.readVolt(A4); // returns voltage
-  voltage[1] = volts.readVolt(A15);
+  voltage[1] = volts.readVolt("A15");
   voltage[2] =  volts.readVolt(A6); // returns voltage
-  voltage[3] = volts.readVolt(A9);
+  voltage[3] = volts.readVolt("A9");
 
   if (!bLcdSetup) // Update display info
   {
@@ -155,26 +156,18 @@ void loop()
     {
       case 1:
         blowingCount++;
-        strip1.setBrightness(2);
-        strip1.show();
         break;
 
       case 2:
         blowingCount += 2;
-        strip1.setBrightness(4);
-        strip1.show();
         break;
 
       case 3:
         blowingCount += 3;
-        strip1.setBrightness(6);
-        strip1.show();
         break;
 
       case 4:
         blowingCount += 4;
-        strip1.setBrightness(7);
-        strip1.show();
         break;
 
       default: break;
