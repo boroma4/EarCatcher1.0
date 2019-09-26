@@ -17,6 +17,9 @@
 #define PIN 6
 #define LEDNUM 6
 Adafruit_NeoPixel strip1 = Adafruit_NeoPixel(LEDNUM, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(LEDNUM, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(LEDNUM, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip4 = Adafruit_NeoPixel(LEDNUM, PIN, NEO_GRB + NEO_KHZ800);
 
 #define COOLDOWN 5
 #define SCORE_DIVIDER 2
@@ -24,7 +27,7 @@ Adafruit_NeoPixel strip1 = Adafruit_NeoPixel(LEDNUM, PIN, NEO_GRB + NEO_KHZ800);
 
 byte command[] = {0, 0, 0, 0};
 byte trackNum = 1;
-byte pixel = 0;
+byte pixel[] = {0, 0, 0, 0};
 
 int address = 0;
 int trackVol = 0;
@@ -58,10 +61,8 @@ ReadValues volts ; // object of ReadValues class EarCatcher lib
 
 void setup()
 {
+  strip_setup();
   //  Start the I2C Bus as Master
-  strip1.begin();
-  strip1.show(); // Initialize all pixels to 'off'
-  strip1.setBrightness(6);
   Wire.begin();
   Serial.begin(9600); //Serial Com for debugging
   lcd.init();                      // display initialisation
@@ -129,9 +130,9 @@ void loop()
   }
 
   voltage[0] =  volts.readVolt(A4); // returns voltage
-  voltage[1] = volts.readVolt("A15");
+  voltage[1] = volts.readVolt(A15);
   voltage[2] =  volts.readVolt(A6); // returns voltage
-  voltage[3] = volts.readVolt("A9");
+  voltage[3] = volts.readVolt(A9);
 
   if (!bLcdSetup) // Update display info
   {
@@ -200,7 +201,7 @@ void loop()
       }
       else
       {
-         highscore = 0;
+        highscore = 0;
       }
     }
     lcd2.setCursor(0, 0);
@@ -422,7 +423,7 @@ void loop()
   /*
      FAN N1 ( pin A4)
   */
-    uint32_t yellow = strip1.Color(255, 255, 0);
+  uint32_t yellow = strip1.Color(255, 255, 0);
   uint32_t blank = strip1.Color(226, 226, 226);
 
   if (!(powerCheck(voltage[0], VOLTAGE_LVL))) // if u need to mute track n1
@@ -434,11 +435,11 @@ void loop()
         cooldown[0] -= 1;
         command[0] = 2;
         Serial.println("Turbine 1 cooling down...");
-        if (pixel > 0)
+        if (pixel[0] > 0)
         {
-          strip1.setPixelColor(pixel, blank);
+          strip1.setPixelColor(pixel[0], blank);
           strip1.show();
-          pixel --;
+          pixel[0] --;
         }
       }
       else // if cooldown time was reached
@@ -459,11 +460,11 @@ void loop()
     wasBlown[0] = true;// was moved
     cooldown[0] = COOLDOWN;
     command[0] = 2;
-    if (pixel < strip1.numPixels())
+    if (pixel[0] < strip1.numPixels())
     {
-      strip1.setPixelColor(pixel, yellow);
+      strip1.setPixelColor(pixel[0], yellow);
       strip1.show();
-      pixel ++;
+      pixel[0] ++;
     }
   }
 
@@ -479,6 +480,12 @@ void loop()
         cooldown[1] -= 1;
         command[1] = 2;
         Serial.println("Turbine 2 cooling down...");
+        if (pixel[1] > 0)
+        {
+          strip2.setPixelColor(pixel[1], blank);
+          strip2.show();
+          pixel[1] --;
+        }
       }
       else // if cooldown time was reached
       {
@@ -496,6 +503,12 @@ void loop()
     wasBlown[1] = true;
     cooldown[1] = COOLDOWN;
     command[1] = 2;
+    if (pixel[1] < strip1.numPixels())
+    {
+      strip2.setPixelColor(pixel[1], yellow);
+      strip2.show();
+      pixel[1] ++;
+    }
   }
 
   /*
@@ -510,6 +523,12 @@ void loop()
         cooldown[2] -= 1;
         command[2] = 2;
         Serial.println("Turbine 3 cooling down...");
+        if (pixel[2] > 0)
+        {
+          strip3.setPixelColor(pixel[2], blank);
+          strip3.show();
+          pixel[2] --;
+        }
       }
       else // if cooldown time was reached
       {
@@ -527,6 +546,12 @@ void loop()
     wasBlown[2] = true;
     cooldown[2] = COOLDOWN;
     command[2] = 2;
+    if (pixel[2] < strip1.numPixels())
+    {
+      strip3.setPixelColor(pixel[2], yellow);
+      strip3.show();
+      pixel[2] ++;
+    }
   }
   /*
         FAN N4 ( pin A9)
@@ -540,6 +565,12 @@ void loop()
         cooldown[3] -= 1;
         command[3] = 2;
         Serial.println("Turbine 4 cooling down...");
+        if (pixel[3] > 0)
+        {
+          strip4.setPixelColor(pixel[3], blank);
+          strip4.show();
+          pixel[3] --;
+        }
       }
       else // if cooldown time was reached
       {
@@ -557,6 +588,12 @@ void loop()
     wasBlown[3] = true;
     cooldown[3] = COOLDOWN;
     command[3] = 2;
+    if (pixel[3] < strip1.numPixels())
+    {
+      strip4.setPixelColor(pixel[3], yellow);
+      strip4.show();
+      pixel[3] ++;
+    }
   }
 
 }
@@ -634,4 +671,20 @@ void display_update()
 
   bLcdSetup = true;
   trackVol = 0;
+}
+
+void strip_setup ()
+{
+  strip1.begin();
+  strip1.show(); // Initialize all pixels to 'off'
+  strip1.setBrightness(6);
+  strip2.begin();
+  strip2.show(); // Initialize all pixels to 'off'
+  strip2.setBrightness(6);
+  strip3.begin();
+  strip3.show(); // Initialize all pixels to 'off'
+  strip3.setBrightness(6);
+  strip4.begin();
+  strip4.show(); // Initialize all pixels to 'off'
+  strip4.setBrightness(6);
 }
