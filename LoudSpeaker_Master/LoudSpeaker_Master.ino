@@ -32,7 +32,7 @@ byte command[] = {0, 0, 0, 0};
 
 int address = 0;
 int trackVol = 0;
-int workingTurbines = -1;
+int wTurbines = -1;
 int lastVol = 4;
 int blowingCount = 0;
 int highscoreCount = 0;
@@ -104,8 +104,8 @@ void loop()
   */
   if (!isPaused and !cheatMode and (voltage[0] > VOLTAGE_LVL or voltage[1] > VOLTAGE_LVL or voltage[2] > VOLTAGE_LVL or voltage[3] > VOLTAGE_LVL ))
   {
-    workingTurbines = General.workingTurbines(voltage, VOLTAGE_LVL);
-    switch (workingTurbines)
+    wTurbines = General.workingTurbines(voltage, VOLTAGE_LVL);
+    switch (wTurbines)
     {
       case 1:
         blowingCount++;
