@@ -57,7 +57,7 @@ decode_results results;
 
 LiquidCrystal_PCF8574 lcd(0x3F); // defining display through I2C
 LiquidCrystal_PCF8574 lcd2(0x27); // defining display through I2C
-ReadValues volts ; // object of ReadValues class EarCatcher lib
+EarCatcher EarCatcher ; // object of ReadValues class EarCatcher lib
 
 void setup()
 {
@@ -129,10 +129,10 @@ void loop()
     resetFunc();
   }
 
-  voltage[0] =  volts.readVolt(A4); // returns voltage
-  voltage[1] = volts.readVolt(A15);
-  voltage[2] =  volts.readVolt(A6); // returns voltage
-  voltage[3] = volts.readVolt(A9);
+  voltage[0] =  EarCatcher.readVolt(A4); // returns voltage
+  voltage[1] = EarCatcher.readVolt(A15);
+  voltage[2] =  EarCatcher.readVolt(A6); // returns voltage
+  voltage[3] = EarCatcher.readVolt(A9);
 
   if (!bLcdSetup) // Update display info
   {
@@ -251,9 +251,6 @@ void loop()
 
   else
   {
-    strip1.setBrightness(0);
-    strip1.show();
-
     blowingCount = 0;
     updateLast = true;
     lcd2.setCursor(0, 0);
@@ -379,7 +376,6 @@ void loop()
         }
         bLcdSetup = false;
         irrecv.resume();
-
         return;
 
       // PAUSE
@@ -399,9 +395,7 @@ void loop()
           isPaused = false;
         }
         irrecv.resume();
-
         return;
-
 
       case 0xFF52AD : // reset function
 
@@ -414,9 +408,7 @@ void loop()
 
       default :
         irrecv.resume();
-
     }
-
   }
   // SEPARATE COMMANDS FOR SLAVES
 
@@ -595,7 +587,6 @@ void loop()
       pixel[3] ++;
     }
   }
-
 }
 
 // SUPPORT FUNCTIONS
@@ -608,7 +599,6 @@ bool powerCheck (float vol, float level) // comparing read voltage to barrier on
   else
   {
     signalRec = true;
-
   }
   return signalRec;
 }
