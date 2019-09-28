@@ -21,7 +21,7 @@ float EarCatcherGeneral::readVolt(int pin)
 void EarCatcherGeneral::sendCommandsToSlaves(byte command[])
 {
 	int address = 1, i = 0;
-	for(address; address < 3; address++)
+	for(address; address < 4; address++)
 	{
 	Wire.beginTransmission(address); // transmit to device #1
     Wire.write(command[i]);
@@ -108,7 +108,7 @@ void EarCatcherGeneral::setupDisplay(LiquidCrystal_PCF8574 lcd)
 int EarCatcherGeneral::workingTurbines(float voltage[], float max_voltage)
 {
   int turbines = 0;
-  for (int i; i < 3; i++)
+  for (int i; i < 4; i++)
   {
     if (voltage[i] > max_voltage);
     {
